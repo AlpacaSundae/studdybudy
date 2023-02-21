@@ -1,4 +1,5 @@
 from SoundRandomiser import *
+from SoundLooper import *
 from tkinter import *
 import tkinter as tk
 #import subprocess
@@ -11,6 +12,28 @@ class UserInterface(tk.Tk):
         super().__init__()
         self.srSetup()
         self.mainMenu()
+
+#   given a list of buttons, place them in a centered row in the gui
+    def centeredButtonRow(self, button_list, height=32, width=64, offset=0):
+        for ii, button in enumerate(button_list):
+            xpos = width*(-len(button_list)*0.5+ii+0.5)
+
+            button.place(
+            anchor=N, 
+            height=height, 
+            width=width, 
+            relx=0.5, 
+            y=offset+height*2/3, 
+            x=xpos,
+        )
+        return [width*len(button_list), height] # [width, height] of button row
+
+#   determine new bounds of two vertically aligned elements
+    def newBoundsVertical(self, dim1, dim2):
+        return [
+            max(dim1[0], dim2[0]),  # width is the biggest width
+            dim1[1] + dim2[1]       # height is the addition of heights
+        ]
 
 #
 #   Main menu 
@@ -26,7 +49,7 @@ class UserInterface(tk.Tk):
         self.minsize(xsize, ysize + label.winfo_reqheight())
 
 #
-#   SoundRandomiser functions and menu\
+#   SoundRandomiser functions and menu
 #
 #   srStart, and srStop are tied to GUI buttons
 #   srSetup only needs be called once, for setup
@@ -62,35 +85,16 @@ class UserInterface(tk.Tk):
             relx=0.5,
             y=offset,
         )
+        dim1 = [srLabel.winfo_reqwidth(), srLabel.winfo_reqheight()]
 
-        width = 64
-        height = 32
         srButton = [
             tk.Button(self, text="Start", bg="blue", command=lambda: self.srStart(True)),
             tk.Button(self, text="Stop" , bg="blue", command=self.srStop),
         ]
-        for ii, button in enumerate(srButton):
-            xpos = width*(-len(srButton)*0.5+ii+0.5)
+        dim2 = self.centeredButtonRow(srButton, offset=offset)
 
-            button.place(
-            anchor=N, 
-            height=height, 
-            width=width, 
-            relx=0.5, 
-            y=offset+height*2/3, 
-            x=xpos,
-        )
-
-        # calc this menus min required size 
-        minsize = [
-            max(
-                len(srButton) * width,
-                srLabel.winfo_reqwidth()),
-            height + srLabel.winfo_reqheight()
-        ]
-
-        return minsize
-
+        # calc this menus min required size and return
+        return self.newBoundsVertical(dim1, dim2)
 
 
 #   Current implementation has the app run from this script
