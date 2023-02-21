@@ -11,6 +11,7 @@ class UserInterface(tk.Tk):
     def __init__(self):
         super().__init__()
         self.srSetup()
+        self.slSetup()
         self.mainMenu()
 
 #   given a list of buttons, place them in a centered row in the gui
@@ -23,10 +24,40 @@ class UserInterface(tk.Tk):
             height=height, 
             width=width, 
             relx=0.5, 
-            y=offset+height*2/3, 
+            y=offset, 
             x=xpos,
         )
         return [width*len(button_list), height] # [width, height] of button row
+
+#   print pairs of label and entry box
+#   width refers text box width
+    def alignedTextPairColumn(self, label_list, entry_list, height=32, width=128, align=0, offset=0, padding=4):
+        textpad = 6
+        widest = 0
+        altoffset = 0
+        for label, entry in zip(label_list, entry_list):
+            label.place(
+                anchor=E, 
+                relx=0.5, 
+                y=altoffset+offset+height/2,
+                x=-align
+            )
+            entry.place(
+                anchor=NW, 
+                height=height, 
+                width=width, 
+                relx=0.5, 
+                y=altoffset+offset, 
+                x=textpad-align,
+            )
+
+            widest = max(widest, label.winfo_reqwidth())
+
+            altoffset += height + padding
+            
+        width = 2*max((width-align+8), align+textpad+widest)
+        return [width, altoffset]
+
 
 #   determine new bounds of two vertically aligned elements
     def newBoundsVertical(self, dim1, dim2):
@@ -45,8 +76,19 @@ class UserInterface(tk.Tk):
         label = tk.Label(self, text="main menu ? ?")
         label.pack()
 
-        xsize, ysize = self.srMenu(label.winfo_reqheight())
-        self.minsize(xsize, ysize + label.winfo_reqheight())
+        spacing = 12
+        dimsCur = [0, label.winfo_reqheight()]
+        
+        dimsCur[1] += spacing
+        dimsNew = self.srMenu(dimsCur[1])
+        dimsCur = self.newBoundsVertical(dimsCur, dimsNew)
+
+        dimsCur[1] += spacing
+        dimsNew = self.slMenu(dimsCur[1])
+        print(dimsNew)
+        dimsCur = self.newBoundsVertical(dimsCur, dimsNew)
+
+        self.minsize(dimsCur[0], dimsCur[1])
 
 #
 #   SoundRandomiser functions and menu
@@ -91,11 +133,74 @@ class UserInterface(tk.Tk):
             tk.Button(self, text="Start", bg="blue", command=lambda: self.srStart(True)),
             tk.Button(self, text="Stop" , bg="blue", command=self.srStop),
         ]
-        dim2 = self.centeredButtonRow(srButton, offset=offset)
+        dim2 = self.centeredButtonRow(srButton, offset=offset+srLabel.winfo_reqheight())
 
         # calc this menus min required size and return
         return self.newBoundsVertical(dim1, dim2)
 
+#
+#   SoundLooper functions and menu
+#
+    def slSetup(self):
+        self.slMenuSetup()
+        self.slPlayer = None
+
+    def slMenuSetup(self):
+        self.slLoopSel = [
+            [
+                tk.Label(self, text="loop start"),
+                tk.Label(self, text="loop end")
+            ],
+            [
+                tk.Entry(self),
+                tk.Entry(self)
+            ]
+        ]
+        self.slFileSel = [
+            [tk.Label(self, text="file")],
+            [tk.Entry(self)],
+        ]
+        self.slButtons = [
+            [
+                tk.Button(self, text="Auto",   bg="white"),
+                tk.Button(self, text="Update", bg="white"),
+            ],
+            [
+                tk.Button(self, text="Play",   bg="white"),
+                tk.Button(self, text="Pause",  bg="white"),
+                tk.Button(self, text="Stop",   bg="white"),
+                tk.Button(self, text="Loop",   bg="white"),
+            ]
+        ]
+
+    def slMenu(self, offset=0, padding=8):
+        dimCur = [0, offset]
+
+        slLabel = tk.Label(self, text="Sound Looper")
+        slLabel.place(
+            anchor=N,
+            relx=0.5,
+            y=dimCur[1],
+        )
+        dimCur[1] += slLabel.winfo_reqheight()
+
+        dimNew = self.alignedTextPairColumn(self.slFileSel[0], self.slFileSel[1], offset=dimCur[1], width=256, align=128)
+        dimCur = self.newBoundsVertical(dimCur, dimNew)
+
+        dimCur[1] += padding
+        dimNew = self.alignedTextPairColumn(self.slLoopSel[0], self.slLoopSel[1], offset=dimCur[1], align=32)
+        dimCur = self.newBoundsVertical(dimCur, dimNew)
+
+        dimCur[1] += padding
+        dimNew = self.centeredButtonRow(self.slButtons[0], offset=dimCur[1])
+        dimCur = self.newBoundsVertical(dimCur, dimNew)
+
+        dimCur[1] += padding
+        dimNew = self.centeredButtonRow(self.slButtons[1], offset=dimCur[1])
+        dimCur = self.newBoundsVertical(dimCur, dimNew)
+
+        dimCur[1] -= offset
+        return dimCur 
 
 #   Current implementation has the app run from this script
 #   unsure what functionality would cause this to change...
