@@ -27,7 +27,7 @@ class SoundLooper(pm.MusicLooper):
 
     def get_looping(self):
         try:
-            return [self.loop_start, self.loop_end]
+            return [self.loop_start/2, self.loop_end/2]
         except:
             raise SoundLooperError("Loop bounds not yet defined")
 
@@ -72,7 +72,7 @@ class SoundLooper(pm.MusicLooper):
 
 
 def main():
-    file = "/hdd/Saving Stuff/Music/NOFX/Compilations/2002 - 45 Or 46 Songs That Weren't Good Enough To Go On Our Other Records/1-12 See Her Pee.mp3"
+    file = "/home/jaico/Dropbox/Other shite/studdybudy/audio/play/killerqueen.mp3"
     loaded = SoundLooper(file)
 
     try:

@@ -75,7 +75,7 @@ class UserInterface(tk.Tk):
 #   Main menu 
 #
     def mainMenu(self):
-        self.title("studdy budy 0.1")
+        self.title("studdy budy 1.0")
         #self.geometry("300x120")
 
         label = tk.Label(self, text="main menu ? ?")
@@ -164,6 +164,11 @@ class UserInterface(tk.Tk):
             self.slPlayer = None
             self.errorMessage(e)
 
+    def slLoadAuto(self):
+        self.slLoadSong()
+        self.slAutoBounds()
+        self.slPlay(pressed=True)
+
     def slAutoBounds(self):
         if self.slPlayer:
             try:
@@ -183,8 +188,8 @@ class UserInterface(tk.Tk):
             self.slLoopSel[1][0].insert(END, self.slBounds[0])
             self.slLoopSel[1][1].insert(END, self.slBounds[1])
         else:
-            self.slLoopSel[1][1].insert(END, self.slPlayer.frames_to_ftime(self.slBounds[0]))
-            self.slLoopSel[1][0].insert(END, self.slPlayer.frames_to_ftime(self.slBounds[1]))
+            self.slLoopSel[1][0].insert(END, self.slPlayer.frames_to_ftime(self.slBounds[0]))
+            self.slLoopSel[1][1].insert(END, self.slPlayer.frames_to_ftime(self.slBounds[1]))
 
     def slPlay(self, pressed=False):
         if pressed:
@@ -221,14 +226,15 @@ class UserInterface(tk.Tk):
         self.slButtons = [
             [
                 tk.Button(self, text="Load",   bg="white", command=self.slLoadSong),
+                tk.Button(self, text="Load+",   bg="white", command=self.slLoadAuto),
                 tk.Button(self, text="Auto",   bg="white", command=self.slAutoBounds),
-                tk.Button(self, text="Update", bg="white"),
+                tk.Button(self, text="Update", bg="grey"),
             ],
             [
                 tk.Button(self, text="Play",   bg="white", command=lambda: self.slPlay(pressed=True)),
                 tk.Button(self, text="Pause",  bg="white", command=self.slPause),
-                tk.Button(self, text="Stop",   bg="white"),
-                tk.Button(self, text="Loop",   bg="white"),
+                tk.Button(self, text="Stop",   bg="grey"),
+                tk.Button(self, text="Loop",   bg="grey"),
             ]
         ]
 
