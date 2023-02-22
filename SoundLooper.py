@@ -19,8 +19,17 @@ class SoundLooperError(Exception):
     pass
 
 class SoundLooper(pm.MusicLooper):
+    def __init__(self, filepath, min_duration_multiplier=0.35, trim=True):
+        try:
+            super().__init__(filepath, min_duration_multiplier, trim)
+        except FileNotFoundError:
+            raise SoundLooperError(f"File \"{filepath}\" could not be loaded")
+
     def get_looping(self):
-        return [self.loop_start, self.loop_end]
+        try:
+            return [self.loop_start, self.loop_end]
+        except:
+            raise SoundLooperError("Loop bounds not yet defined")
 
     def autoset_looping(self):
         try:

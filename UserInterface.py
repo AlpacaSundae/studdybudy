@@ -4,6 +4,8 @@ from tkinter import *
 import tkinter as tk
 #import subprocess
 
+SL_DIR = "audio/play/nirvana01.mp3"
+
 class UserInterfaceError(Exception):
     pass
 
@@ -13,6 +15,9 @@ class UserInterface(tk.Tk):
         self.srSetup()
         self.slSetup()
         self.mainMenu()
+
+    def errorMessage(self, msg):
+        print(msg)
 
 #   given a list of buttons, place them in a centered row in the gui
     def centeredButtonRow(self, button_list, height=32, width=64, offset=0):
@@ -144,7 +149,57 @@ class UserInterface(tk.Tk):
     def slSetup(self):
         self.slMenuSetup()
         self.slPlayer = None
+        self.slBounds = None
+        self.slDisplayFrames = False
+        self.slInterval = 1
+        self.slPlaying = False
 
+    def slLoadSong(self):
+        filename = self.slFileSel[1][0].get()
+        self.slBounds = None
+        try:
+            self.slPlayer = SoundLooper(filename)
+            print(f"loaded: {filename}")
+        except SoundLooperError as e:
+            self.slPlayer = None
+            self.errorMessage(e)
+
+    def slAutoBounds(self):
+        if self.slPlayer:
+            try:
+                self.slPlayer.autoset_looping()
+                self.slBounds = self.slPlayer.get_looping()
+                self.slDisplayBounds()
+            except SoundLooperError as e:
+                self.slBounds = [0, 0]
+                self.errorMessage(e)
+        else:
+            self.errorMessage("No song is currently loaded")
+
+    def slDisplayBounds(self):
+        self.slLoopSel[1][0].delete(0, END)
+        self.slLoopSel[1][1].delete(0, END)
+        if self.slDisplayFrames:
+            self.slLoopSel[1][0].insert(END, self.slBounds[0])
+            self.slLoopSel[1][1].insert(END, self.slBounds[1])
+        else:
+            self.slLoopSel[1][1].insert(END, self.slPlayer.frames_to_ftime(self.slBounds[0]))
+            self.slLoopSel[1][0].insert(END, self.slPlayer.frames_to_ftime(self.slBounds[1]))
+
+    def slPlay(self, pressed=False):
+        if pressed:
+            self.slPlaying = True
+        if self.slPlayer:
+            self.slPlayer.play_looping_update()
+            if self.slPlaying:
+                self.after(self.slInterval, self.slPlay)
+        else:
+            self.errorMessage("No song loaded to play")
+
+    def slPause(self):
+        self.slPlaying = False
+
+#   menu and menu setup for the sl functions
     def slMenuSetup(self):
         self.slLoopSel = [
             [
@@ -160,14 +215,18 @@ class UserInterface(tk.Tk):
             [tk.Label(self, text="file")],
             [tk.Entry(self)],
         ]
+
+        self.slFileSel[1][0].insert(END, SL_DIR)
+        
         self.slButtons = [
             [
-                tk.Button(self, text="Auto",   bg="white"),
+                tk.Button(self, text="Load",   bg="white", command=self.slLoadSong),
+                tk.Button(self, text="Auto",   bg="white", command=self.slAutoBounds),
                 tk.Button(self, text="Update", bg="white"),
             ],
             [
-                tk.Button(self, text="Play",   bg="white"),
-                tk.Button(self, text="Pause",  bg="white"),
+                tk.Button(self, text="Play",   bg="white", command=lambda: self.slPlay(pressed=True)),
+                tk.Button(self, text="Pause",  bg="white", command=self.slPause),
                 tk.Button(self, text="Stop",   bg="white"),
                 tk.Button(self, text="Loop",   bg="white"),
             ]
@@ -188,11 +247,11 @@ class UserInterface(tk.Tk):
         dimCur = self.newBoundsVertical(dimCur, dimNew)
 
         dimCur[1] += padding
-        dimNew = self.alignedTextPairColumn(self.slLoopSel[0], self.slLoopSel[1], offset=dimCur[1], align=32)
+        dimNew = self.centeredButtonRow(self.slButtons[0], offset=dimCur[1])
         dimCur = self.newBoundsVertical(dimCur, dimNew)
 
         dimCur[1] += padding
-        dimNew = self.centeredButtonRow(self.slButtons[0], offset=dimCur[1])
+        dimNew = self.alignedTextPairColumn(self.slLoopSel[0], self.slLoopSel[1], offset=dimCur[1], align=32)
         dimCur = self.newBoundsVertical(dimCur, dimNew)
 
         dimCur[1] += padding
