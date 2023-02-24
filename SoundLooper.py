@@ -25,9 +25,15 @@ class SoundLooper(pm.MusicLooper):
         except FileNotFoundError:
             raise SoundLooperError(f"File \"{filepath}\" could not be loaded")
 
+    def get_song_length(self):
+        try:
+            return self.idx_end/self.channels
+        except:
+            raise SoundLooperError("Song length not yet defined")
+
     def get_looping(self):
         try:
-            return [self.loop_start/2, self.loop_end/2]
+            return [self.loop_start/self.channels, self.loop_end/self.channels]
         except:
             raise SoundLooperError("Loop bounds not yet defined")
 

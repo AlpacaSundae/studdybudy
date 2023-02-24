@@ -18,6 +18,11 @@ class UserInterface(tk.Tk):
 
     def errorMessage(self, msg):
         print(msg)
+        self.status['text'] = msg
+
+    def statusMessage(self, msg):
+        print(msg)
+        self.status['text'] = msg
 
 #   given a list of buttons, place them in a centered row in the gui
     def centeredButtonRow(self, button_list, height=32, width=64, offset=0):
@@ -90,10 +95,18 @@ class UserInterface(tk.Tk):
 
         dimsCur[1] += spacing
         dimsNew = self.slMenu(dimsCur[1])
-        print(dimsNew)
         dimsCur = self.newBoundsVertical(dimsCur, dimsNew)
 
+        dimsCur[1] += spacing
+        dimsNew = self.status(dimsCur[1])
+        dimsCur = self.newBoundsVertical(dimsCur, dimsNew)
+        
         self.minsize(dimsCur[0], dimsCur[1])
+
+    def status(self, offset):
+        self.status = tk.Label(self, text="welcome!")
+        self.status.pack(anchor = "s", side = LEFT)
+        return [0, self.status.winfo_reqheight()]
 
 #
 #   SoundRandomiser functions and menu
@@ -110,7 +123,7 @@ class UserInterface(tk.Tk):
 
     def srStart(self, start=False):
         if start and not self.srLoop:
-            print("starting SoundRandomiser playback loop")
+            self.statusMessage("starting SoundRandomiser playback loop")
             self.srLoop = True
         if self.srLoop:
             self.srPlayer.roll()
@@ -119,7 +132,7 @@ class UserInterface(tk.Tk):
     def srStop(self):
         if self.srLoop:
             self.srLoop = False
-            print("stopping SoundRandomiser playback loop")
+            self.statusMessage("stopping SoundRandomiser playback loop")
 
 #       opening this menu does not impact the flow of the sr functionality
 #       INPUTS and optional offset for the height to palce the manu at
@@ -150,16 +163,18 @@ class UserInterface(tk.Tk):
         self.slMenuSetup()
         self.slPlayer = None
         self.slBounds = None
-        self.slDisplayFrames = False
+        self.slDisplayFrames = True
         self.slInterval = 1
         self.slPlaying = False
+        self.slStopping = False
+        self.slLooping = False
 
     def slLoadSong(self):
         filename = self.slFileSel[1][0].get()
         self.slBounds = None
         try:
             self.slPlayer = SoundLooper(filename)
-            print(f"loaded: {filename}")
+            self.statusMessage(f"loaded: {filename}")
         except SoundLooperError as e:
             self.slPlayer = None
             self.errorMessage(e)
@@ -169,11 +184,23 @@ class UserInterface(tk.Tk):
         self.slAutoBounds()
         self.slPlay(pressed=True)
 
-    def slAutoBounds(self):
+    def slReadBounds(self):
+        return [
+            int(self.slLoopSel[1][0].get()),
+            int(self.slLoopSel[1][1].get()),
+        ]
+
+    def slBoundSet(self, auto=True):
         if self.slPlayer:
             try:
-                self.slPlayer.autoset_looping()
-                self.slBounds = self.slPlayer.get_looping()
+                if auto:
+                    self.slPlayer.autoset_looping()
+                    self.slBounds = self.slPlayer.get_looping()
+                else:
+                    self.slBounds = self.slReadBounds()
+                    self.slPlayer.set_looping(self.slBounds[0], self.slBounds[1])
+                self.slSongLength = self.slPlayer.get_song_length()
+                self.slToggleLoop(True)
                 self.slDisplayBounds()
             except SoundLooperError as e:
                 self.slBounds = [0, 0]
@@ -181,39 +208,68 @@ class UserInterface(tk.Tk):
         else:
             self.errorMessage("No song is currently loaded")
 
+    def slAutoBounds(self):
+        self.slBoundSet(auto=True)
+
+    def slManualBounds(self):
+        self.slBoundSet(auto=False)
+
     def slDisplayBounds(self):
         self.slLoopSel[1][0].delete(0, END)
         self.slLoopSel[1][1].delete(0, END)
+        self.slLoopSel[1][2].delete(0, END)
         if self.slDisplayFrames:
             self.slLoopSel[1][0].insert(END, self.slBounds[0])
             self.slLoopSel[1][1].insert(END, self.slBounds[1])
+            self.slLoopSel[1][2].insert(END, self.slSongLength)
         else:
             self.slLoopSel[1][0].insert(END, self.slPlayer.frames_to_ftime(self.slBounds[0]))
             self.slLoopSel[1][1].insert(END, self.slPlayer.frames_to_ftime(self.slBounds[1]))
+            self.slLoopSel[1][2].insert(END, self.slPlayer.frames_to_ftime(self.slSongLength))
 
     def slPlay(self, pressed=False):
         if pressed:
             self.slPlaying = True
         if self.slPlayer:
-            self.slPlayer.play_looping_update()
-            if self.slPlaying:
-                self.after(self.slInterval, self.slPlay)
+            try:
+                self.slPlayer.play_looping_update(self.slLooping)
+                if self.slStopping:
+                    self.slPlaying = False
+                    self.slStopping = False
+                    self.slPlayer.set_looping(self.slBounds[0], self.slBounds[1])
+                elif self.slPlaying:
+                    self.after(self.slInterval, self.slPlay)
+            except SoundLooperFinished:
+                self.slPlaying = False
+                self.statusMessage("Song finished")
         else:
             self.errorMessage("No song loaded to play")
 
     def slPause(self):
         self.slPlaying = False
 
+    def slStop(self):
+        self.slStopping = True
+
+    def slToggleLoop(self, set=False):
+        if set:
+            self.slLooping = True
+        else:
+            self.slLooping = not self.slLooping
+        self.slButtons[1][3]['bg'] = "blue" if self.slLooping else "white" 
+
 #   menu and menu setup for the sl functions
     def slMenuSetup(self):
         self.slLoopSel = [
             [
                 tk.Label(self, text="loop start"),
-                tk.Label(self, text="loop end")
+                tk.Label(self, text="loop end"),
+                tk.Label(self, text="song length"),
             ],
             [
                 tk.Entry(self),
-                tk.Entry(self)
+                tk.Entry(self),
+                tk.Entry(self),
             ]
         ]
         self.slFileSel = [
@@ -226,15 +282,15 @@ class UserInterface(tk.Tk):
         self.slButtons = [
             [
                 tk.Button(self, text="Load",   bg="white", command=self.slLoadSong),
-                tk.Button(self, text="Load+",   bg="white", command=self.slLoadAuto),
+                tk.Button(self, text="Load+",  bg="white", command=self.slLoadAuto),
                 tk.Button(self, text="Auto",   bg="white", command=self.slAutoBounds),
-                tk.Button(self, text="Update", bg="grey"),
+                tk.Button(self, text="Update", bg="white", command=self.slManualBounds),
             ],
             [
                 tk.Button(self, text="Play",   bg="white", command=lambda: self.slPlay(pressed=True)),
                 tk.Button(self, text="Pause",  bg="white", command=self.slPause),
-                tk.Button(self, text="Stop",   bg="grey"),
-                tk.Button(self, text="Loop",   bg="grey"),
+                tk.Button(self, text="Stop",   bg="white", command=self.slStop),
+                tk.Button(self, text="Loop",   bg="white", command=self.slToggleLoop),
             ]
         ]
 
