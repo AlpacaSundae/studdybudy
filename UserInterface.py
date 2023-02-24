@@ -4,7 +4,7 @@ from tkinter import *
 import tkinter as tk
 #import subprocess
 
-SL_DIR = "audio/play/nirvana01.mp3"
+SL_DIR = "audio/play/de_spicy.mp3"
 
 class UserInterfaceError(Exception):
     pass
