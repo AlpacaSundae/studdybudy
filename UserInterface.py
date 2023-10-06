@@ -118,7 +118,7 @@ class UserInterface(tk.Tk):
         pygame.init()
         self.srLoop = False
         self.srPlayer = SoundRandomiser()
-        self.srInterval = 100
+        self.srInterval = 50
         self.srPlayer.setProbability(0.0625)
 
     def srStart(self, start=False):
