@@ -4,6 +4,7 @@ pygame.init()
 
 import os.path
 import customtkinter as ctk
+from threading import Thread
 
 class UserInterface(ctk.CTk):
     def __init__(self):
@@ -23,6 +24,8 @@ class UserInterface(ctk.CTk):
         self.status = ctk.CTkLabel(self, width=32, justify=ctk.LEFT, text="welcome! "*3)
         self.status.pack(anchor="sw", side=ctk.BOTTOM)
 
+    # TODO: make this function not resize the window if the text is too big..
+    #       but also allow for resizing/scrolling to view long messages
     def statusMessage(self, msg):
         print(msg)
         self.status.configure(text=msg)
@@ -102,6 +105,8 @@ class SoundRandomiserUI(ctk.CTkFrame):
 class SoundLooperUI(ctk.CTkFrame):
     ERROR_NO_PLAYER = "No slPlayer object found"
     DEFAULT_ROOT_DIR = os.path.abspath("./media/looper")
+    THREAD_CHECK_INTERVAL = 1000 #msec
+    THREAD_TIMEOUT = 0.25 #sec
 
     def __init__(self, parent : UserInterface):
         ctk.CTkFrame.__init__(self, parent)
@@ -118,22 +123,39 @@ class SoundLooperUI(ctk.CTkFrame):
                 pass # TODO: make .stopPlayback() check if it was actually playing first
         try:
             self.parent.statusMessage("slPlayer: loading...")
+            # TODO: thread this as well
             self.slPlayer = SoundLooper(filepath=os.path.join(self.slSettings["root_dir"], self.slSettings["filename"].get()))
             self.parent.statusMessage("slPlayer: loaded!")
         except SoundLooperError as e:
             self.parent.statusMessage(f"Error creating slPlayer: {e}")
 
     def autosetLoop(self):
-        self.parent.statusMessage("slPlayer: finding loop points...")
-        self.slPlayer.autosetLoop()
-        self.parent.statusMessage("slPlayer: loop points are go")
+        if self.slPlayer:
+            self.parent.statusMessage("slPlayer: finding loop points...")
+            t = Thread(target=self.slPlayer.autosetLoop)
+            t.start()
+            self.after(self.THREAD_CHECK_INTERVAL, self.autosetLoopCheck, t, 0)
+        else:
+            self.parent.statusMessage(self.ERROR_NO_PLAYER)
+
+    def autosetLoopCheck(self, t : Thread, count=0):
+        t.join(timeout=self.THREAD_TIMEOUT)
+        if (t.is_alive()):
+            count += 1
+            self.parent.statusMessage(f"slPlayer: finding loop points... [{count}]")
+            self.after(self.THREAD_CHECK_INTERVAL, self.autosetLoopCheck, t, count)
+        else:
+            if (self.slPlayer.getLoop()):
+                self.parent.statusMessage("slPlayer: loop points are go")
+            else:
+                self.parent.statusMessage("slPlayer: failed to find loop points ):")
 
     def play(self):
         if self.slPlayer:
             self.slPlayer.startPlayback()
             self.parent.statusMessage("slPlayer: playing")
         else:
-            self.parent.statusMessage(self.ERROR_NO_PLAYER)
+            self.parent.statusMessage(f"{self.ERROR_NO_PLAYER}: have you loaded a song?")
 
     def pause(self):
         if self.slPlayer:

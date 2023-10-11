@@ -8,7 +8,13 @@ class SoundLooper(pm.MusicLooper):
     def __init__(self, filepath, min_duration_multiplier=0.35, trim=True):
         try:
             super().__init__(filepath, min_duration_multiplier, trim)
-        except FileNotFoundError:
+            self.loopStart = 0
+            self.loopEnd = 0
+            self.curFrame = 0
+            self.startFrom = 0
+            self.looping = False
+            self.loopNo = 0
+        except:
             raise SoundLooperError(f"File \"{filepath}\" could not be loaded")
 
     # returns the song length in seconds   
@@ -21,6 +27,18 @@ class SoundLooper(pm.MusicLooper):
     # returns the loop points [in, out] in (UNITS??)
     def getLooping(self):
         return self.looping
+    
+    def getLoop(self):
+        # check if valid
+        if (
+            self.loopStart < self.loopEnd
+            and self.loopStart >= 0 
+            and self.loopEnd <= self.mlaudio.length
+        ):
+            return [self.loopStart, self.loopEnd]
+        # return none of not valid or set
+        else:
+            return None
 
     # automatically determins the loop points
     def autosetLoop(self):
