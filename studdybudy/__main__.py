@@ -18,6 +18,7 @@ class UserInterface(ctk.CTk):
     def mainMenu(self):
         self.title("studdy budy 2.0")
         #self.geometry("400x400")
+        self.minsize(336, 372)
         self.status()
 
     def status(self):
@@ -124,7 +125,7 @@ class SoundLooperUI(ctk.CTkFrame):
         try:
             self.parent.statusMessage("slPlayer: loading...")
             # TODO: thread this as well
-            self.slPlayer = SoundLooper(filepath=os.path.join(self.slSettings["root_dir"], self.slSettings["filename"].get()))
+            self.slPlayer = SoundLooper(filepath=os.path.join(self.slSettings["root_dir"].get(), self.slSettings["filename"].get()))
             self.parent.statusMessage("slPlayer: loaded!")
         except SoundLooperError as e:
             self.parent.statusMessage(f"Error creating slPlayer: {e}")
@@ -175,20 +176,26 @@ class SoundLooperUI(ctk.CTkFrame):
 
     def initSettings(self):
         self.slSettings = {
-            "root_dir" : self.DEFAULT_ROOT_DIR,
+            "root_dir" : ctk.StringVar(value=self.DEFAULT_ROOT_DIR),
             "filename" : ctk.StringVar(),
         }
 
     def slMenu(self):
-        ctk.CTkLabel(self, text="Sound Looper").grid(row=0, column=0, columnspan=3)
-        ctk.CTkButton(self, text="Play", width=96, command=self.play).grid(row=1, column=0, padx=8)
-        ctk.CTkButton(self, text="Pause", width=96, command=self.pause).grid(row=1, column=1, padx=8)
-        ctk.CTkButton(self, text="Stop", width=96, command=self.stop).grid(row=1, column=2, padx=8)
-
-        ctk.CTkLabel(self, text="filename:").grid(row=2, column=0)
-        ctk.CTkEntry(self, textvariable=self.slSettings["filename"]).grid(row=2, column=1, columnspan=2, pady=8)
-        ctk.CTkButton(self, text="load", width=96, command=self.loadSong).grid(row=3, column=0, padx=8)
-        ctk.CTkButton(self, text="autoset loop", width=96, command=self.autosetLoop).grid(row=3, column=1, padx=8)
+        row = 0
+        ctk.CTkLabel(self, text="Sound Looper").grid(row=row, column=0, columnspan=3)
+        row += 1
+        ctk.CTkButton(self, text="Play", width=96, command=self.play).grid(row=row, column=0, padx=8)
+        ctk.CTkButton(self, text="Pause", width=96, command=self.pause).grid(row=row, column=1, padx=8)
+        ctk.CTkButton(self, text="Stop", width=96, command=self.stop).grid(row=row, column=2, padx=8)
+        row += 1
+        ctk.CTkLabel(self, text="directory:").grid(row=row, column=0)
+        ctk.CTkEntry(self, textvariable=self.slSettings["root_dir"]).grid(row=row, column=1, columnspan=2, pady=8, sticky="ew")
+        row += 1
+        ctk.CTkLabel(self, text="filename:").grid(row=row, column=0)
+        ctk.CTkEntry(self, textvariable=self.slSettings["filename"]).grid(row=row, column=1, columnspan=2, pady=8, sticky="ew")
+        row += 1
+        ctk.CTkButton(self, text="load", width=96, command=self.loadSong).grid(row=row, column=0, padx=8)
+        ctk.CTkButton(self, text="autoset loop", width=96, command=self.autosetLoop).grid(row=row, column=1, padx=8)
 
 def main():
     UI = UserInterface()
