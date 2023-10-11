@@ -4,9 +4,6 @@ import sounddevice as sd
 class SoundLooperError(Exception):
     pass
 
-class SoundLooperFinished(Exception):
-    pass
-
 class SoundLooper(pm.MusicLooper):
     def __init__(self, filepath, min_duration_multiplier=0.35, trim=True):
         try:

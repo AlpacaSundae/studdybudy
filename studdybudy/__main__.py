@@ -2,6 +2,7 @@ from SoundRandomiser import *
 from SoundLooper import *
 pygame.init()
 
+import os.path
 import customtkinter as ctk
 
 class UserInterface(ctk.CTk):
@@ -100,23 +101,32 @@ class SoundRandomiserUI(ctk.CTkFrame):
 
 class SoundLooperUI(ctk.CTkFrame):
     ERROR_NO_PLAYER = "No slPlayer object found"
+    DEFAULT_ROOT_DIR = os.path.abspath("./media/looper")
 
     def __init__(self, parent : UserInterface):
         ctk.CTkFrame.__init__(self, parent)
         self.parent = parent
         self.slPlayer = None
+        self.initSettings()
         self.slMenu()
-        #TEMP
-        self.slLoadSong(filename="D:\\Desktop\\studdybudy\\media\\looper\\de_spicy.mp3")
-        self.slPlayer.autosetLoop()
 
-    def slLoadSong(self, filename):
+    def loadSong(self):
         if self.slPlayer is not None:
-            self.slPlayer.stopPlayback()
+            try:
+                self.slPlayer.stopPlayback()
+            except:
+                pass # TODO: make .stopPlayback() check if it was actually playing first
         try:
-            self.slPlayer = SoundLooper(filepath=filename)
+            self.parent.statusMessage("slPlayer: loading...")
+            self.slPlayer = SoundLooper(filepath=os.path.join(self.slSettings["root_dir"], self.slSettings["filename"].get()))
+            self.parent.statusMessage("slPlayer: loaded!")
         except SoundLooperError as e:
             self.parent.statusMessage(f"Error creating slPlayer: {e}")
+
+    def autosetLoop(self):
+        self.parent.statusMessage("slPlayer: finding loop points...")
+        self.slPlayer.autosetLoop()
+        self.parent.statusMessage("slPlayer: loop points are go")
 
     def play(self):
         if self.slPlayer:
@@ -141,11 +151,22 @@ class SoundLooperUI(ctk.CTkFrame):
         else:
             self.parent.statusMessage(self.ERROR_NO_PLAYER)
 
+    def initSettings(self):
+        self.slSettings = {
+            "root_dir" : self.DEFAULT_ROOT_DIR,
+            "filename" : ctk.StringVar(),
+        }
+
     def slMenu(self):
         ctk.CTkLabel(self, text="Sound Looper").grid(row=0, column=0, columnspan=3)
         ctk.CTkButton(self, text="Play", width=96, command=self.play).grid(row=1, column=0, padx=8)
-        ctk.CTkButton(self, text="Pause" , width=96, command=self.pause).grid(row=1, column=1, padx=8)
-        ctk.CTkButton(self, text="Stop" , width=96, command=self.stop).grid(row=1, column=2, padx=8)
+        ctk.CTkButton(self, text="Pause", width=96, command=self.pause).grid(row=1, column=1, padx=8)
+        ctk.CTkButton(self, text="Stop", width=96, command=self.stop).grid(row=1, column=2, padx=8)
+
+        ctk.CTkLabel(self, text="filename:").grid(row=2, column=0)
+        ctk.CTkEntry(self, textvariable=self.slSettings["filename"]).grid(row=2, column=1, columnspan=2, pady=8)
+        ctk.CTkButton(self, text="load", width=96, command=self.loadSong).grid(row=3, column=0, padx=8)
+        ctk.CTkButton(self, text="autoset loop", width=96, command=self.autosetLoop).grid(row=3, column=1, padx=8)
 
 def main():
     UI = UserInterface()
