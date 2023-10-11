@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "studdybudy"
-version = "0.1.0"
+version = "2.0"
 description = ""
 authors = ["AlpacaSundae <jaicobschott@hotmail.com>"]
 readme = "README.md"
