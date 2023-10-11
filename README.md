@@ -1,12 +1,12 @@
 Requires poetry
 
-To install dependencies: 'poetry install'
+To install dependencies: `poetry install`
 
-To run: 'poetry run python studdybudy'
+To run: `poetry run python studdybudy`
 
 # SoundRandomiser functionality
 randomly decides to play a random sound effect
-place sfx to loop over in the folder './media/randomiser' (subdirectories are ok!)
+place sfx to loop over in the folder `./media/randomiser` (subdirectories are ok!)
 these must be formatted as ".wav"
 (sfx must be added to the folder before program launch)
 
@@ -15,7 +15,7 @@ these must be formatted as ".wav"
 
 # SoundLooper functionality
 load in a song and endlessly loop it!
-over here, we use the './media/looper' folder for songs (then you can choose the song by typing just the filename into the program's textbox)
+over here, we use the `./media/looper` folder for songs (then you can choose the song by typing just the filename into the program's textbox)
 implements https://github.com/arkrow/PyMusicLooper to automagically select ideal points of the song to loop between,,,
 format is not as strict here
 
