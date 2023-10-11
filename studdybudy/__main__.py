@@ -1,4 +1,5 @@
 from SoundRandomiser import *
+from SoundLooper import *
 pygame.init()
 
 import customtkinter as ctk
@@ -8,7 +9,9 @@ class UserInterface(ctk.CTk):
         super().__init__()
         self.mainMenu()
         self.sr = SoundRandomiserUI(self) # sr = SoundRandomiser
-        self.sr.pack(anchor="e", side=ctk.LEFT)
+        self.sr.pack(anchor="n", side=ctk.TOP)
+        self.sl = SoundLooperUI(self) # sr = SoundRandomiser
+        self.sl.pack(anchor="n", side=ctk.TOP)
 
     def mainMenu(self):
         self.title("studdy budy 2.0")
@@ -27,7 +30,7 @@ class UserInterface(ctk.CTk):
 #   SoundRandomiser menu functions 
 #
 class SoundRandomiserUI(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent : UserInterface):
         ctk.CTkFrame.__init__(self, parent)
         self.parent = parent
         self.srPlayer = SoundRandomiser(prob=0.0625)
@@ -94,6 +97,55 @@ class SoundRandomiserUI(ctk.CTkFrame):
         ctk.CTkLabel(self, textvariable=self.srProbability["sTrpt"]).grid(row=6, column=1, sticky="w")
         self.srProbability["probSlider"].grid(row=3, column=0, columnspan=2)
         self.srProbability["freqSlider"].grid(row=5, column=0, columnspan=2)
+
+class SoundLooperUI(ctk.CTkFrame):
+    ERROR_NO_PLAYER = "No slPlayer object found"
+
+    def __init__(self, parent : UserInterface):
+        ctk.CTkFrame.__init__(self, parent)
+        self.parent = parent
+        self.slPlayer = None
+        self.slMenu()
+        #TEMP
+        self.slLoadSong(filename="D:\\Desktop\\studdybudy\\media\\looper\\de_spicy.mp3")
+        self.slPlayer.autosetLoop()
+
+    def slLoadSong(self, filename):
+        if self.slPlayer is not None:
+            self.slPlayer.stopPlayback()
+        try:
+            self.slPlayer = SoundLooper(filepath=filename)
+        except SoundLooperError as e:
+            self.parent.statusMessage(f"Error creating slPlayer: {e}")
+
+    def play(self):
+        if self.slPlayer:
+            self.slPlayer.startPlayback()
+            self.parent.statusMessage("slPlayer: playing")
+        else:
+            self.parent.statusMessage(self.ERROR_NO_PLAYER)
+
+    def pause(self):
+        if self.slPlayer:
+            self.slPlayer.stopPlayback()
+            self.parent.statusMessage("slPlayer: paused")
+        else:
+            self.parent.statusMessage(self.ERROR_NO_PLAYER)
+
+    def stop(self):
+        if self.slPlayer:
+            self.slPlayer.stopPlayback()
+            self.parent.statusMessage("slPlayer: stopping...")
+            self.slPlayer.resetPlayback()
+            self.parent.statusMessage("slPlayer: stopped")
+        else:
+            self.parent.statusMessage(self.ERROR_NO_PLAYER)
+
+    def slMenu(self):
+        ctk.CTkLabel(self, text="Sound Looper").grid(row=0, column=0, columnspan=3)
+        ctk.CTkButton(self, text="Play", width=96, command=self.play).grid(row=1, column=0, padx=8)
+        ctk.CTkButton(self, text="Pause" , width=96, command=self.pause).grid(row=1, column=1, padx=8)
+        ctk.CTkButton(self, text="Stop" , width=96, command=self.stop).grid(row=1, column=2, padx=8)
 
 def main():
     UI = UserInterface()
