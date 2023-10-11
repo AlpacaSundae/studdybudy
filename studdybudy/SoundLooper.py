@@ -82,7 +82,7 @@ class SoundLooper(pm.MusicLooper):
                         outdata[chunksize:] = 0
                         raise sd.CallbackStop()
             
-        self.stream = sd.OutputStream(samplerate=self.mlaudio.rate, callback=sdCallback)
+        self.stream = sd.OutputStream(samplerate=self.mlaudio.rate, callback=sdCallback, channels=self.mlaudio.n_channels)
         self.stream.start()
 
     def stopPlayback(self):
