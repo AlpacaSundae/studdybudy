@@ -172,6 +172,8 @@ class SoundLooperUI(ctk.CTkFrame):
     def play(self):
         if self.slPlayer:
             self.slPlayer.startPlayback()
+            self.playing = True
+            self.progressBarUpdate()
             self.parent.statusMessage("slPlayer: playing")
         else:
             self.parent.statusMessage(f"{self.ERROR_NO_PLAYER}: have you loaded a song?")
@@ -182,6 +184,7 @@ class SoundLooperUI(ctk.CTkFrame):
             self.parent.statusMessage("slPlayer: paused")
         else:
             self.parent.statusMessage(self.ERROR_NO_PLAYER)
+        self.playing = False
 
     def stop(self):
         if self.slPlayer:
@@ -191,6 +194,7 @@ class SoundLooperUI(ctk.CTkFrame):
             self.parent.statusMessage("slPlayer: stopped")
         else:
             self.parent.statusMessage(self.ERROR_NO_PLAYER)        
+        self.playing = False
 
     def slMenu(self):
         self.stringVars = {
@@ -201,6 +205,9 @@ class SoundLooperUI(ctk.CTkFrame):
             "songLength"    : ctk.StringVar(value="0:00"),
             "curProgress"   : ctk.StringVar(),
         }
+        self.playProgress = ctk.DoubleVar(value=0.0)
+        self.playing = False
+
         row = 0
         
         ctk.CTkLabel(self, text="Sound Looper").grid(row=row, column=0, columnspan=3)
@@ -233,8 +240,16 @@ class SoundLooperUI(ctk.CTkFrame):
         ctk.CTkLabel(self, textvariable=self.stringVars["songLength"], anchor="n").grid(row=row, column=2, sticky="n")
         row += 1
 
+        ctk.CTkSlider(self, from_=0, to=1, variable=self.playProgress, command=self.progressBarManual).grid(row=row, column=0, columnspan=3, sticky="ew")
+        row += 1
+
+    def progressBarManual(self, value):
+        self.slPlayer.setPlayPercentage(value)
+
     def progressBarUpdate(self):
-        pass
+        if self.playing:
+            self.playProgress.set(self.slPlayer.getPlayPercentage())
+            self.after(1000, self.progressBarUpdate)
             
 def main():
     UI = UserInterface()

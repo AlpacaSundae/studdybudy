@@ -9,20 +9,30 @@ class SoundLooper(pm.MusicLooper):
         try:
             super().__init__(filepath, min_duration_multiplier, trim)
             self.loopStart = 0
-            self.loopEnd = 0
+            self.loopEnd = self.mlaudio.length
             self.curFrame = 0
             self.startFrom = 0
             self.looping = False
             self.loopNo = 0
+            self.setLoop(self.loopStart, self.loopEnd, self.startFrom)
         except:
             raise SoundLooperError(f"File \"{filepath}\" could not be loaded")
 
-    # returns the song length in seconds   
     def getSongName(self):
         return self.mlaudio.filename
 
+    # returns the song length in seconds   
     def getSongLength(self):
         return self.mlaudio.total_duration
+    
+    # value between 0 and 1 representing the progress through entire song length
+    def getPlayPercentage(self):
+        return (self.curFrame / self.mlaudio.length)
+    
+    def setPlayPercentage(self, percent):
+        self.curFrame = int(percent * self.mlaudio.length)
+        if self.curFrame > self.loopEnd:
+            self.curFrame = self.loopEnd
 
     # returns the loop points [in, out] in (UNITS??)
     def getLooping(self):
