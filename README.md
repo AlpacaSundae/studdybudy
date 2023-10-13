@@ -1,5 +1,7 @@
 Requires poetry
 
+Most cases fail poetry install when not using local env so set: `poetry config --local virtualenvs.in-project true`
+
 To install dependencies: `poetry install`
 
 To run: `poetry run python studdybudy`
