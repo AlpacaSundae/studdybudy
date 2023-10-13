@@ -129,6 +129,24 @@ class SoundLooperUI(ctk.CTkFrame):
         except SoundLooperError as e:
             self.parent.statusMessage(f"Error creating slPlayer: {e}")
 
+        self.setTimeStrings()
+
+    def setTimeStrings(self):
+        if self.slPlayer is None:
+            self.stringVars["loopStart"].set("0:00")
+            self.stringVars["loopEnd"].set("0:00")
+            self.stringVars["songLength"].set("0:00")
+        else:
+            loop = self.slPlayer.getLoop()
+            lenSec = self.slPlayer.getSongLength()
+
+            if loop is not None:
+                loopA = self.slPlayer.getSampleAsSec(loop[0])
+                loopB = self.slPlayer.getSampleAsSec(loop[1])
+                self.stringVars["loopStart"].set(f"{loopA // 60:02.0f}:{loopA % 60:02.0f}")
+                self.stringVars["loopEnd"].set(f"{loopB // 60:02.0f}:{loopB % 60:02.0f}")
+            self.stringVars["songLength"].set(f"{lenSec // 60:02.0f}:{lenSec % 60:02.0f}")
+
     def autosetLoop(self):
         if self.slPlayer:
             self.parent.statusMessage("slPlayer: finding loop points...")
@@ -146,6 +164,7 @@ class SoundLooperUI(ctk.CTkFrame):
             self.after(self.THREAD_CHECK_INTERVAL, self.autosetLoopCheck, t, count)
         else:
             if (self.slPlayer.getLoop()):
+                self.setTimeStrings()
                 self.parent.statusMessage("slPlayer: loop points are go")
             else:
                 self.parent.statusMessage("slPlayer: failed to find loop points ):")
@@ -176,10 +195,10 @@ class SoundLooperUI(ctk.CTkFrame):
     def slMenu(self):
         self.stringVars = {
             "root_dir"      : ctk.StringVar(value=self.DEFAULT_ROOT_DIR),
-            "filename"      : ctk.StringVar(),
-            "loopStart"     : ctk.StringVar(),
-            "loopEnd"       : ctk.StringVar(),
-            "songLength"    : ctk.StringVar(),
+            "filename"      : ctk.StringVar(value="barracks_settlement.opus"),
+            "loopStart"     : ctk.StringVar(value="0:00"),
+            "loopEnd"       : ctk.StringVar(value="0:00"),
+            "songLength"    : ctk.StringVar(value="0:00"),
             "curProgress"   : ctk.StringVar(),
         }
         row = 0
@@ -204,7 +223,15 @@ class SoundLooperUI(ctk.CTkFrame):
         ctk.CTkButton(self, text="autoset loop", width=96, command=self.autosetLoop).grid(row=row, column=1, padx=8)
         row += 1
 
-        self.playing = False
+        ctk.CTkLabel(self, text="loop start", anchor="s").grid(row=row, column=0, sticky="s")
+        ctk.CTkLabel(self, text="loop end", anchor="s").grid(row=row, column=1, sticky="s")
+        ctk.CTkLabel(self, text="song length", anchor="s").grid(row=row, column=2, sticky="s")
+        row += 1
+
+        ctk.CTkLabel(self, textvariable=self.stringVars["loopStart"], anchor="n").grid(row=row, column=0, sticky="n")
+        ctk.CTkLabel(self, textvariable=self.stringVars["loopEnd"], anchor="n").grid(row=row, column=1, sticky="n")
+        ctk.CTkLabel(self, textvariable=self.stringVars["songLength"], anchor="n").grid(row=row, column=2, sticky="n")
+        row += 1
 
     def progressBarUpdate(self):
         pass

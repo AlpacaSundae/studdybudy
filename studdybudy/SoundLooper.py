@@ -36,9 +36,12 @@ class SoundLooper(pm.MusicLooper):
             and self.loopEnd <= self.mlaudio.length
         ):
             return [self.loopStart, self.loopEnd]
-        # return none of not valid or set
+        # return none if not valid or set
         else:
             return None
+        
+    def getSampleAsSec(self, no):
+        return self.mlaudio.samples_to_seconds(no)
 
     # automatically determins the loop points
     def autosetLoop(self):
