@@ -10,41 +10,55 @@ class UserInterface(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.mainMenu()
-        self.sr = SoundRandomiserUI(self) # sr = SoundRandomiser
+        # first menu: sr = SoundRandomiser
+        self.sr = SoundRandomiserUI(self)
         self.sr.pack(anchor="n", side=ctk.TOP)
-        self.sl = SoundLooperUI(self) # sr = SoundRandomiser
+        # second menu: sl = SoundLooper
+        self.sl = SoundLooperUI(self)
         self.sl.pack(anchor="n", side=ctk.TOP)
 
         # Set the window minimum size to the initial window size
         self.update()
         self.after_idle(lambda: self.minsize(self.winfo_width(), self.winfo_height()))
 
+    # properties to set up the main window
     def mainMenu(self):
         self.title("studdy budy 2.0")
         #self.geometry("400x400")
         self.status()
 
+    # status bar used to display messages at the bottom of window
     def status(self):
         self.status = ctk.CTkLabel(self, width=32, justify=ctk.LEFT, text="welcome! "*3)
         self.status.pack(anchor="sw", side=ctk.BOTTOM)
 
-    # TODO: make this function not resize the window if the text is too big..
-    #       but also allow for resizing/scrolling to view long messages
-    def statusMessage(self, msg):
+    def statusMessage(self, msg, info=None):
         print(msg)
+        if info:
+            print(info)
         self.status.configure(text=msg)
+        # TODO: make this function not resize the window if the text is too big..
+        #       but also allow for resizing/scrolling to view long messages
 
 #
-#   SoundRandomiser menu functions 
+#   SoundRandomiser functions
+#     -- This interfaces the SoundRandomiser script with a ctk frame for the main window
+#     -- functionality exposed:
+#               start/stop randomiser, 
+#               adjust frequency and probability of playback
 #
 class SoundRandomiserUI(ctk.CTkFrame):
     def __init__(self, parent : UserInterface):
         ctk.CTkFrame.__init__(self, parent)
         self.parent = parent
-        self.srPlayer = SoundRandomiser(prob=0.0625)
+        try:
+            self.srPlayer = SoundRandomiser(prob=0.0625)
+        except SoundRandomiserError as e:
+            self.srPlayer = None
+            self.parent.statusMessage("Unable to create srPLayer", info=e)
         # interval = ms before function should be called again by tk's mainloop
         self.srInterval = 50
-        # change if the randomiser is on or not
+        # defines if the randomiser is running or not
         self.srRun = False
         self.srMenu()
 
@@ -68,9 +82,15 @@ class SoundRandomiserUI(ctk.CTkFrame):
             self.srPlayer.roll()
             self.after(self.srInterval, self.srPlay)
 
+    #
+    # Sliders
+    #   -- Adjust the probability and frequency of rolls 
+    #
     def srUpdateProb(self):
         self.srProbability["sProb"].set(f"{100*self.srPlayer.prob:3.2f}%")
         self.srProbability["sFreq"].set(f"{self.srInterval:.0f}ms")
+        # sTrpt : throughput is estimated based on the settings for now
+        # TODO: track the actual throughpout and display that instead 
         self.srProbability["sTrpt"].set(f"{self.srInterval/self.srPlayer.prob:.0f}ms per sfx")
         self.srProbability["probSlider"].set(self.srPlayer.prob)
         self.srProbability["freqSlider"].set(self.srInterval)
@@ -83,6 +103,10 @@ class SoundRandomiserUI(ctk.CTkFrame):
         self.srInterval = int(val)
         self.srUpdateProb()
 
+    # 
+    # SoundRandomiser menu setup function
+    #   -- very simple
+    #
     def srMenu(self):
         ctk.CTkLabel(self, text="Sound Randomiser").grid(row=0, column=0, columnspan=2)
         ctk.CTkButton(self, text="Start", width=96, command=lambda: self.srToggle(True)).grid(row=1, column=0, padx=8)
@@ -106,11 +130,23 @@ class SoundRandomiserUI(ctk.CTkFrame):
         self.srProbability["probSlider"].grid(row=3, column=0, columnspan=2)
         self.srProbability["freqSlider"].grid(row=5, column=0, columnspan=2)
 
+#
+#   SoundLooper functions
+#     -- Similarly, this interfaces the SoundLooper script with a ctk frame for the main window
+#     -- functionality exposed:
+#               load song, auto-set loop points
+#               play/pause/stop playback
+#               progress slider and seek ability
+#               set directory and audio file
+#     -- TODO
+#               allow for manually set loop points
+#
 class SoundLooperUI(ctk.CTkFrame):
     ERROR_NO_PLAYER = "No slPlayer object found"
     DEFAULT_ROOT_DIR = os.path.abspath("./media/looper")
-    THREAD_CHECK_INTERVAL = 1000 #msec
-    THREAD_TIMEOUT = 0.25 #sec
+    THREAD_TIMEOUT = 0.05 #sec
+    THREAD_CHECK_INTERVAL = 950 #msec
+    PROGRESS_UPDATE_INTERVAL = 1000
 
     def __init__(self, parent : UserInterface):
         ctk.CTkFrame.__init__(self, parent)
@@ -126,11 +162,11 @@ class SoundLooperUI(ctk.CTkFrame):
                 pass # TODO: make .stopPlayback() check if it was actually playing first
         try:
             self.parent.statusMessage("slPlayer: loading...")
-            # TODO: thread this as well
+            # TODO: thread this as well to stop UI freeze on load
             self.slPlayer = SoundLooper(filepath=os.path.join(self.stringVars["root_dir"].get(), self.stringVars["filename"].get()))
             self.parent.statusMessage("slPlayer: loaded!")
         except SoundLooperError as e:
-            self.parent.statusMessage(f"Error creating slPlayer: {e}")
+            self.parent.statusMessage(f"Error creating slPlayer", info=e)
 
         self.setTimeStrings()
 
@@ -150,9 +186,21 @@ class SoundLooperUI(ctk.CTkFrame):
             self.stringVars["songLength"].set(f"{curSec // 60:02.0f}:{curSec % 60:02.0f} / {lenSec // 60:02.0f}:{lenSec % 60:02.0f}")
 
     def manualsetLoop(self):
-        pass
+        if not self.slPlayer:
+            self.loadSong()
+        if self.slPlayer:
+            # spawn a window with on the left the current loop start, loop end, song length (in frames)
+            #                     on the right an entry for loop start and loop end
+            # a button to test the loop point (play from 5s before to 5s after loop point)
+            # a buttons to confirm or cancel
+            pass # TODO: all of the above lmao
+        else:
+            self.parent.statusMessage(self.ERROR_NO_PLAYER)
 
+    # this uses pymusiclooper's functionality to automatically select points to loop between
     def autosetLoop(self):
+        if not self.slPlayer:
+            self.loadSong()
         if self.slPlayer:
             self.parent.statusMessage("slPlayer: finding loop points...")
             t = Thread(target=self.slPlayer.autosetLoop)
@@ -162,6 +210,8 @@ class SoundLooperUI(ctk.CTkFrame):
             self.parent.statusMessage(self.ERROR_NO_PLAYER)
 
     def autosetLoopCheck(self, t : Thread, count=0):
+        # periodically tries to rejoin the thread with timeout to minimise UI freeze
+        # when the thread is no longer alive, loop points have been set
         t.join(timeout=self.THREAD_TIMEOUT)
         if (t.is_alive()):
             count += 1
@@ -173,6 +223,20 @@ class SoundLooperUI(ctk.CTkFrame):
                 self.parent.statusMessage("slPlayer: loop points are go")
             else:
                 self.parent.statusMessage("slPlayer: failed to find loop points ):")
+
+    # user can seek through the song using this function
+    def progressBarManual(self, value):
+        if self.slPlayer:
+            self.slPlayer.setPlayPercentage(value)
+            self.setTimeStrings()
+
+    # this updates the position of the progress bar each [defined interval]
+    # needs to be restarted whenever playback is stopped
+    def progressBarUpdate(self):
+        if self.playing:
+            self.playProgress.set(self.slPlayer.getPlayPercentage())
+            self.setTimeStrings()
+            self.after(self.PROGRESS_UPDATE_INTERVAL, self.progressBarUpdate)
 
     def play(self):
         if self.slPlayer:
@@ -245,17 +309,6 @@ class SoundLooperUI(ctk.CTkFrame):
 
         ctk.CTkSlider(self, from_=0, to=1, variable=self.playProgress, command=self.progressBarManual).grid(row=row, column=0, columnspan=3, sticky="ew")
         row += 1
-
-    def progressBarManual(self, value):
-        if self.slPlayer:
-            self.slPlayer.setPlayPercentage(value)
-            self.setTimeStrings()
-
-    def progressBarUpdate(self):
-        if self.playing:
-            self.playProgress.set(self.slPlayer.getPlayPercentage())
-            self.setTimeStrings()
-            self.after(1000, self.progressBarUpdate)
 
 def main():
     UI = UserInterface()
