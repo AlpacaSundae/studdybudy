@@ -133,19 +133,18 @@ class SoundLooperUI(ctk.CTkFrame):
 
     def setTimeStrings(self):
         if self.slPlayer is None:
-            self.stringVars["loopStart"].set("0:00")
-            self.stringVars["loopEnd"].set("0:00")
-            self.stringVars["songLength"].set("0:00")
+            self.stringVars["loopStr"].set("0:00 - 0:00")
+            self.stringVars["songLength"].set("0:00 / 0:00")
         else:
             loop = self.slPlayer.getLoop()
             lenSec = self.slPlayer.getSongLength()
+            curSec = self.slPlayer.getCurrentTime()
 
             if loop is not None:
                 loopA = self.slPlayer.getSampleAsSec(loop[0])
                 loopB = self.slPlayer.getSampleAsSec(loop[1])
-                self.stringVars["loopStart"].set(f"{loopA // 60:02.0f}:{loopA % 60:02.0f}")
-                self.stringVars["loopEnd"].set(f"{loopB // 60:02.0f}:{loopB % 60:02.0f}")
-            self.stringVars["songLength"].set(f"{lenSec // 60:02.0f}:{lenSec % 60:02.0f}")
+                self.stringVars["loopStr"].set(f"{loopA // 60:02.0f}:{loopA % 60:02.0f} - {loopB // 60:02.0f}:{loopB % 60:02.0f}")
+            self.stringVars["songLength"].set(f"{curSec // 60:02.0f}:{curSec % 60:02.0f} / {lenSec // 60:02.0f}:{lenSec % 60:02.0f}")
 
     def autosetLoop(self):
         if self.slPlayer:
@@ -200,9 +199,8 @@ class SoundLooperUI(ctk.CTkFrame):
         self.stringVars = {
             "root_dir"      : ctk.StringVar(value=self.DEFAULT_ROOT_DIR),
             "filename"      : ctk.StringVar(value="barracks_settlement.opus"),
-            "loopStart"     : ctk.StringVar(value="0:00"),
-            "loopEnd"       : ctk.StringVar(value="0:00"),
-            "songLength"    : ctk.StringVar(value="0:00"),
+            "loopStr"       : ctk.StringVar(value="0:00 - 0:00"),
+            "songLength"    : ctk.StringVar(value="0:00 / 0:00"),
             "curProgress"   : ctk.StringVar(),
         }
         self.playProgress = ctk.DoubleVar(value=0.0)
@@ -230,25 +228,26 @@ class SoundLooperUI(ctk.CTkFrame):
         ctk.CTkButton(self, text="autoset loop", width=96, command=self.autosetLoop).grid(row=row, column=1, padx=8)
         row += 1
 
-        ctk.CTkLabel(self, text="loop start", anchor="s").grid(row=row, column=0, sticky="s")
-        ctk.CTkLabel(self, text="loop end", anchor="s").grid(row=row, column=1, sticky="s")
-        ctk.CTkLabel(self, text="song length", anchor="s").grid(row=row, column=2, sticky="s")
+        ctk.CTkLabel(self, text="loop", anchor="se").grid(row=row, column=0, columnspan=2, sticky="s")
+        ctk.CTkLabel(self, text="runtime", anchor="sw").grid(row=row, column=1, columnspan=2, sticky="s")
         row += 1
 
-        ctk.CTkLabel(self, textvariable=self.stringVars["loopStart"], anchor="n").grid(row=row, column=0, sticky="n")
-        ctk.CTkLabel(self, textvariable=self.stringVars["loopEnd"], anchor="n").grid(row=row, column=1, sticky="n")
-        ctk.CTkLabel(self, textvariable=self.stringVars["songLength"], anchor="n").grid(row=row, column=2, sticky="n")
+        ctk.CTkLabel(self, textvariable=self.stringVars["loopStr"], anchor="ne").grid(row=row, column=0, columnspan=2, sticky="n")
+        ctk.CTkLabel(self, textvariable=self.stringVars["songLength"], anchor="nw").grid(row=row, column=1, columnspan=2, sticky="n")
         row += 1
 
         ctk.CTkSlider(self, from_=0, to=1, variable=self.playProgress, command=self.progressBarManual).grid(row=row, column=0, columnspan=3, sticky="ew")
         row += 1
 
     def progressBarManual(self, value):
-        self.slPlayer.setPlayPercentage(value)
+        if self.slPlayer:
+            self.slPlayer.setPlayPercentage(value)
+            self.setTimeStrings()
 
     def progressBarUpdate(self):
         if self.playing:
             self.playProgress.set(self.slPlayer.getPlayPercentage())
+            self.setTimeStrings()
             self.after(1000, self.progressBarUpdate)
             
 def main():

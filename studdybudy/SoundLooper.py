@@ -25,6 +25,9 @@ class SoundLooper(pm.MusicLooper):
     def getSongLength(self):
         return self.mlaudio.total_duration
     
+    def getCurrentTime(self):
+        return self.mlaudio.samples_to_seconds(self.curFrame)
+    
     # value between 0 and 1 representing the progress through entire song length
     def getPlayPercentage(self):
         return (self.curFrame / self.mlaudio.length)
