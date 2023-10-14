@@ -15,10 +15,13 @@ class UserInterface(ctk.CTk):
         self.sl = SoundLooperUI(self) # sr = SoundRandomiser
         self.sl.pack(anchor="n", side=ctk.TOP)
 
+        # Set the window minimum size to the initial window size
+        self.update()
+        self.after_idle(lambda: self.minsize(self.winfo_width(), self.winfo_height()))
+
     def mainMenu(self):
         self.title("studdy budy 2.0")
         #self.geometry("400x400")
-        self.minsize(336, 372)
         self.status()
 
     def status(self):
@@ -146,6 +149,9 @@ class SoundLooperUI(ctk.CTkFrame):
                 self.stringVars["loopStr"].set(f"{loopA // 60:02.0f}:{loopA % 60:02.0f} - {loopB // 60:02.0f}:{loopB % 60:02.0f}")
             self.stringVars["songLength"].set(f"{curSec // 60:02.0f}:{curSec % 60:02.0f} / {lenSec // 60:02.0f}:{lenSec % 60:02.0f}")
 
+    def manualsetLoop(self):
+        pass
+
     def autosetLoop(self):
         if self.slPlayer:
             self.parent.statusMessage("slPlayer: finding loop points...")
@@ -225,7 +231,8 @@ class SoundLooperUI(ctk.CTkFrame):
         row += 1
         
         ctk.CTkButton(self, text="load", width=96, command=self.loadSong).grid(row=row, column=0, padx=8)
-        ctk.CTkButton(self, text="autoset loop", width=96, command=self.autosetLoop).grid(row=row, column=1, padx=8)
+        ctk.CTkButton(self, text="auto-set loop", width=96, command=self.autosetLoop).grid(row=row, column=1, padx=8)
+        ctk.CTkButton(self, text="manual-set loop", width=96, command=self.manualsetLoop).grid(row=row, column=2, padx=8)
         row += 1
 
         ctk.CTkLabel(self, text="loop", anchor="se").grid(row=row, column=0, columnspan=2, sticky="s")
@@ -249,7 +256,7 @@ class SoundLooperUI(ctk.CTkFrame):
             self.playProgress.set(self.slPlayer.getPlayPercentage())
             self.setTimeStrings()
             self.after(1000, self.progressBarUpdate)
-            
+
 def main():
     UI = UserInterface()
     UI.mainloop()     
