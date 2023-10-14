@@ -1,10 +1,14 @@
-Requires poetry
+Requires poetry `https://python-poetry.org/docs/#installing-with-the-official-installer`
 
-Most cases fail poetry install when not using local env so set: `poetry config --local virtualenvs.in-project true`
+Setup:
 
-To install dependencies: `poetry install`
+`poetry config --local virtualenvs.in-project true` (unsure why, but this is needed to work at this point)
 
-To run: `poetry run python studdybudy`
+`poetry install`
+
+Run:
+
+`poetry run python studdybudy` (substituting python with pythonw lets you close the cmd window)
 
 # SoundRandomiser functionality
 randomly decides to play a random sound effect
