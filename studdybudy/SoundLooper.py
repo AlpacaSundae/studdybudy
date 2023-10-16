@@ -102,7 +102,10 @@ class SoundLooper(pm.MusicLooper):
         self.stream.start()
 
     def stopPlayback(self):
-        self.stream.stop()
+        if hasattr(self, "stream"):
+            self.stream.stop()
+        else:
+            raise SoundLooperError("No playback stream has been created yet. Have you started playback before?")
 
 def main():
     file = "D:\\Desktop\\studdybudy\\media\\looper\\de_spicy.mp3"

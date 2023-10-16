@@ -142,6 +142,7 @@ class SoundRandomiserUI(ctk.CTkFrame):
 #               allow for manually set loop points
 #
 class SoundLooperUI(ctk.CTkFrame):
+    SL_ERROR = "SoundLooper object threw an error"
     ERROR_NO_PLAYER = "No slPlayer object found"
     DEFAULT_ROOT_DIR = os.path.abspath("./media/looper")
     THREAD_TIMEOUT = 0.05 #sec
@@ -239,7 +240,9 @@ class SoundLooperUI(ctk.CTkFrame):
             self.after(self.PROGRESS_UPDATE_INTERVAL, self.progressBarUpdate)
 
     def play(self):
-        if self.slPlayer:
+        if self.playing:
+            self.parent.statusMessage("slPlayer: already playing")
+        elif self.slPlayer:
             self.slPlayer.startPlayback()
             self.playing = True
             self.progressBarUpdate()
@@ -248,21 +251,33 @@ class SoundLooperUI(ctk.CTkFrame):
             self.parent.statusMessage(f"{self.ERROR_NO_PLAYER}: have you loaded a song?")
 
     def pause(self):
-        if self.slPlayer:
-            self.slPlayer.stopPlayback()
-            self.parent.statusMessage("slPlayer: paused")
+        if not self.playing:
+            self.parent.statusMessage("slPlayer: already paused")
+        elif self.slPlayer:
+            try:
+                self.slPlayer.stopPlayback()
+                self.parent.statusMessage("slPlayer: paused")
+            except SoundLooperError as e:
+                self.parent.statusMessage(self.SL_ERROR, e)
         else:
             self.parent.statusMessage(self.ERROR_NO_PLAYER)
         self.playing = False
 
     def stop(self):
         if self.slPlayer:
-            self.slPlayer.stopPlayback()
-            self.parent.statusMessage("slPlayer: stopping...")
-            self.slPlayer.resetPlayback()
-            self.parent.statusMessage("slPlayer: stopped")
+            try:
+                if self.playing:
+                    self.parent.statusMessage("slPlayer: stopping...")
+                    self.slPlayer.stopPlayback()
+                self.slPlayer.resetPlayback()
+                self.parent.statusMessage("slPlayer: stopped")
+            except SoundLooperError as e:
+                self.parent.statusMessage(self.SL_ERROR, e)
         else:
             self.parent.statusMessage(self.ERROR_NO_PLAYER)        
+        # reset the slider and playback text
+        self.playProgress.set(0.0)
+        self.setTimeStrings()
         self.playing = False
 
     def slMenu(self):
@@ -296,7 +311,7 @@ class SoundLooperUI(ctk.CTkFrame):
         
         ctk.CTkButton(self, text="load", width=96, command=self.loadSong).grid(row=row, column=0, padx=8)
         ctk.CTkButton(self, text="auto-set loop", width=96, command=self.autosetLoop).grid(row=row, column=1, padx=8)
-        ctk.CTkButton(self, text="manual-set loop", width=96, command=self.manualsetLoop).grid(row=row, column=2, padx=8)
+        ctk.CTkButton(self, text="manual-set loop", width=96, command=self.manualsetLoop, state=ctk.DISABLED).grid(row=row, column=2, padx=8)
         row += 1
 
         ctk.CTkLabel(self, text="loop", anchor="se").grid(row=row, column=0, columnspan=2, sticky="s")
