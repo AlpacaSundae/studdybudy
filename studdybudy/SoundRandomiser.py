@@ -52,6 +52,11 @@ class SoundRandomiser():
     def getRootDir(self):
         return self.root_dir
 
+    # returns a list of the subdirectories with loaded songs, each entry being an absolute path string
+    # returns a tuple containing both (active, and inactive) subdirectories
+    def getSubDirList(self):
+        return (self.sfx_store.keys(), self.sfx_alt_store.keys())
+
     def playRandom(self):
         random.choice(random.choice(list(self.sfx_store.values()))).play()
 
