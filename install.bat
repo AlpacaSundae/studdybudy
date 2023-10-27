@@ -1,5 +1,5 @@
 git pull
-poetry config --local virtualenvs.in-project true
+::poetry config --local virtualenvs.in-project true
 poetry install
 
 :: this creates a shortcut to run the program
