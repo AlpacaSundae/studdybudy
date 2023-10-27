@@ -1,8 +1,20 @@
 Requires poetry `https://python-poetry.org/docs/#installing-with-the-official-installer`
 
-Setup:
+# Usage
 
-`poetry config --local virtualenvs.in-project true` (unsure why, but this is needed to work at this point)
+## Windows Users
+
+* After installing poetry, ensure it is available in your PATH (verify with `poetry about`)
+* Launch "install.bat" to install dependencies
+* Run with the newly created shortcut, "studdybudy" 
+  * You can always just run with "run.bat" if desired, but the shortcut will hide the command window
+
+If you move the folder and so the shortcut doesn't work, just run "install.bat" again.
+The generated shortcut can be put anywhere
+
+## Everyone
+
+Setup:
 
 `poetry install`
 
