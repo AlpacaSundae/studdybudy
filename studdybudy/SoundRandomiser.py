@@ -10,7 +10,7 @@ class SoundRandomiserError(Exception):
 # Sound effects are loaded in from a directory (and its subs) and played back with pygame
 class SoundRandomiser():
     def __init__(self, sfx_dir = "./media/randomiser", prob = 0.0000001):
-        self.root_dir = os.path.normpath(sfx_dir)
+        self.root_dir = os.path.abspath(sfx_dir)
         self.sfxLoadDir(self.root_dir)
         self.setProbability(prob)
         self.stop = False
@@ -48,6 +48,9 @@ class SoundRandomiser():
             self.prob = prob
         else:
             raise SoundRandomiserError(f"Probablitiy must be in range [0.0, 1.0], given: {prob}")
+
+    def getRootDir(self):
+        return self.root_dir
 
     def playRandom(self):
         random.choice(random.choice(list(self.sfx_store.values()))).play()

@@ -35,7 +35,7 @@ class UserInterface(ctk.CTk):
     def statusMessage(self, msg, info=None):
         print(msg)
         if info:
-            print(info)
+            print(f"-> {info}")
         self.status.configure(text=msg)
         # TODO: make this function not resize the window if the text is too big..
         #       but also allow for resizing/scrolling to view long messages
@@ -56,6 +56,7 @@ class SoundRandomiserUI(ctk.CTkFrame):
         except SoundRandomiserError as e:
             self.srPlayer = None
             self.parent.statusMessage("Unable to create srPLayer", info=e)
+        self.srRootDir = ctk.StringVar(value=self.srPlayer.getRootDir())
         # interval = ms before function should be called again by tk's mainloop
         self.srInterval = 50
         # defines if the randomiser is running or not
@@ -75,6 +76,14 @@ class SoundRandomiserUI(ctk.CTkFrame):
             self.srRun = False
         else:
             self.parent.statusMessage("SoundRandomiser isn't running...")
+
+    def srLoadDir(self):
+        self.parent.statusMessage("Loading SoundRandomiser directory", info=self.srRootDir.get())
+        try:
+            self.srPlayer.sfxLoadDir(self.srRootDir.get(), init=True)
+            self.parent.statusMessage("SoundRandomiser directory loaded!")
+        except SoundRandomiserError as e:
+            self.parent.statusMessage("SoundRandomiser unable to load directory", info=e)
 
     # repeatedly rolls for a sfx chance given srRun is true
     def srPlay(self):
@@ -108,9 +117,12 @@ class SoundRandomiserUI(ctk.CTkFrame):
     #   -- very simple
     #
     def srMenu(self):
-        ctk.CTkLabel(self, text="Sound Randomiser").grid(row=0, column=0, columnspan=2)
-        ctk.CTkButton(self, text="Start", width=96, command=lambda: self.srToggle(True)).grid(row=1, column=0, padx=8)
-        ctk.CTkButton(self, text="Stop" , width=96, command=lambda: self.srToggle(False)).grid(row=1, column=1, padx=8)
+        row = 0
+        ctk.CTkLabel(self, text="Sound Randomiser").grid(row=row, column=0, columnspan=3)
+        row += 1
+        ctk.CTkButton(self, text="Start", width=96, command=lambda: self.srToggle(True)).grid(row=row, column=0, padx=8)
+        ctk.CTkButton(self, text="Stop" , width=96, command=lambda: self.srToggle(False)).grid(row=row, column=1, padx=8)
+        ctk.CTkButton(self, text="Load" , width=96, command=self.srLoadDir).grid(row=row, column=2, padx=8)
 
         self.srProbability = {
             "sProb" : ctk.StringVar(),
@@ -121,14 +133,23 @@ class SoundRandomiserUI(ctk.CTkFrame):
         }
         self.srUpdateProb()
         
-        ctk.CTkLabel(self, text="probability: ").grid(row=2, column=0, sticky="e")
-        ctk.CTkLabel(self, text=  "frequency: ").grid(row=4, column=0, sticky="e")
-        ctk.CTkLabel(self, text= "throughput: ").grid(row=6, column=0, sticky="e")
-        ctk.CTkLabel(self, textvariable=self.srProbability["sProb"]).grid(row=2, column=1, sticky="w")
-        ctk.CTkLabel(self, textvariable=self.srProbability["sFreq"]).grid(row=4, column=1, sticky="w")
-        ctk.CTkLabel(self, textvariable=self.srProbability["sTrpt"]).grid(row=6, column=1, sticky="w")
-        self.srProbability["probSlider"].grid(row=3, column=0, columnspan=2)
-        self.srProbability["freqSlider"].grid(row=5, column=0, columnspan=2)
+        row += 1
+        ctk.CTkLabel(self, text="directory: ").grid(row=row, column=0)
+        ctk.CTkEntry(self, textvariable=self.srRootDir).grid(row=row, column=1, columnspan=2, pady=8, sticky="ew")
+
+        row += 1
+        ctk.CTkLabel(self, text="probability: ", height=0).grid(row=row, column=0, sticky="s")
+        ctk.CTkLabel(self, textvariable=self.srProbability["sProb"], height=0).grid(row=row+1, column=0, sticky="ne", ipadx=8)
+        self.srProbability["probSlider"].grid(row=row, column=1, columnspan=2, rowspan=2)
+        row += 2
+
+        ctk.CTkLabel(self, text=  "frequency: ", height=0).grid(row=row, column=0, sticky="s")
+        ctk.CTkLabel(self, textvariable=self.srProbability["sFreq"], height=0).grid(row=row+1, column=0, sticky="ne", ipadx=8)
+        self.srProbability["freqSlider"].grid(row=row, column=1, columnspan=2, rowspan=2)
+        row += 2
+
+        ctk.CTkLabel(self, text= "throughput: ").grid(row=row, column=0)
+        ctk.CTkLabel(self, textvariable=self.srProbability["sTrpt"]).grid(row=row, column=1, columnspan=2, sticky="w", ipadx=8)
 
 #
 #   SoundLooper functions
