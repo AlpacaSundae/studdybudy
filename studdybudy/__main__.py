@@ -65,7 +65,9 @@ class SoundRandomiserUI(ctk.CTkFrame):
 
     def srToggle(self, run=False):
         if run:
-            if not self.srRun:
+            if self.srPlayer is None:
+                self.parent.statusMessage("SoundRandomiser not initialised...")
+            elif not self.srRun:
                 self.parent.statusMessage("starting SoundRandomiser playback loop")
                 self.srRun = True
                 self.srPlay()
@@ -96,16 +98,22 @@ class SoundRandomiserUI(ctk.CTkFrame):
     #   -- Adjust the probability and frequency of rolls 
     #
     def srUpdateProb(self):
-        self.srProbability["sProb"].set(f"{100*self.srPlayer.prob:3.2f}%")
-        self.srProbability["sFreq"].set(f"{self.srInterval:.0f}ms")
-        # sTrpt : throughput is estimated based on the settings for now
-        # TODO: track the actual throughpout and display that instead 
-        self.srProbability["sTrpt"].set(f"{self.srInterval/self.srPlayer.prob:.0f}ms per sfx")
-        self.srProbability["probSlider"].set(self.srPlayer.prob)
-        self.srProbability["freqSlider"].set(self.srInterval)
+        if self.srPlayer:
+            self.srProbability["sProb"].set(f"{100*self.srPlayer.prob:3.2f}%")
+            self.srProbability["sFreq"].set(f"{self.srInterval:.0f}ms")
+            # sTrpt : throughput is estimated based on the settings for now
+            # TODO: track the actual throughpout and display that instead 
+            self.srProbability["sTrpt"].set(f"{self.srInterval/self.srPlayer.prob:.0f}ms per sfx")
+            self.srProbability["probSlider"].set(self.srPlayer.prob)
+            self.srProbability["freqSlider"].set(self.srInterval)
+        else:
+            self.parent.statusMessage("SoundRandomiser not initialised...")
 
     def probSlidier(self, prob):
-        self.srPlayer.setProbability(prob)
+        if self.srPlayer:
+            self.srPlayer.setProbability(prob)
+        else:
+            self.parent.statusMessage("SoundRandomiser not initialised...")
         self.srUpdateProb()
 
     def freqSlidier(self, val):
