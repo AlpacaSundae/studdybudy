@@ -10,10 +10,11 @@ class SoundRandomiserError(Exception):
 # Sound effects are loaded in from a directory (and its subs) and played back with pygame
 class SoundRandomiser():
     def __init__(self, sfx_dir = "./media/randomiser", prob = 0.0000001):
+        self.sfx_store = {}
+        self.sfx_enabled = set()
         self.root_dir = os.path.abspath(sfx_dir)
         self.sfxLoadDir(self.root_dir)
         self.setProbability(prob)
-        self.stop = False
 
     # loads any wav files in the directory provided
     # checks subfolders to allow the user to sort samples
@@ -24,7 +25,7 @@ class SoundRandomiser():
             
             if (init):
                 self.sfx_store = {}
-                self.sfx_alt_store = {}
+                self.sfx_enabled = set()
 
             for root, dirs, files in os.walk(sfx_dir):
                 # for each subdirectory with files we will create a list of pygame sounds
@@ -39,6 +40,8 @@ class SoundRandomiser():
                 # and we add it to the sfx dict only if a sound file was found and loaded
                 if (len(temp_store) != 0):
                     self.sfx_store[root] = temp_store
+                    if root not in self.sfx_enabled:
+                        self.sfx_enabled.add(root)
 
             if (len(self.sfx_store) == 0):
                 raise SoundRandomiserError(f"no .wav files could be loaded from: \'{sfx_dir}\'")
@@ -53,12 +56,45 @@ class SoundRandomiser():
         return self.root_dir
 
     # returns a list of the subdirectories with loaded songs, each entry being an absolute path string
-    # returns a tuple containing both (active, and inactive) subdirectories
-    def getSubDirList(self):
-        return (self.sfx_store.keys(), self.sfx_alt_store.keys())
+    def getSubDirListAll(self):
+        return list(self.sfx_store.keys())
+    
+    # returns true if the directory is enabled
+    def getSubDirStatus(self, dir_str):
+        return (dir_str in self.sfx_enabled)
+
+    # adds the input string to self.sfx_enabled if it is found as a key in the sfx dictionary
+    def enableSubDir(self, dir_str : str):
+        if dir_str in self.sfx_store:
+            if dir_str not in self.sfx_enabled:
+                self.sfx_enabled.add(dir_str)
+            else:
+                print(f"{dir_str} is already enabled")
+        else:
+            raise SoundRandomiserError(f"Could not enable sub directory which has no songs loaded: {dir_str}")
+        
+    # removes the input string to self.sfx_enabled if it is found as a key in the sfx dictionary
+    def disableSubDir(self, dir_str : str ):
+        if dir_str in self.sfx_store:
+            if dir_str in self.sfx_enabled:
+                self.sfx_enabled.remove(dir_str)
+            else:
+                print(f"{dir_str} is already disabled")
+        else:
+            raise SoundRandomiserError(f"Could not disable sub directory which has no songs loaded: {dir_str}")
+        
+    # this is for setting multiple subdirectories
+    # uses input as a list of the sub directores to be enabled
+    def setSubDirList(self, dir_strs : list[str]):
+        self.sfx_enabled = set()
+        for cur_str in dir_strs:
+            self.enableSubDir(cur_str)
 
     def playRandom(self):
-        random.choice(random.choice(list(self.sfx_store.values()))).play()
+        if not self.sfx_enabled:
+            print("No sfx to randomise...")
+        else:
+            random.choice(self.sfx_store[random.choice(list(self.sfx_enabled))]).play()
 
     def roll(self):
         result = random.random()
