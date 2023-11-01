@@ -12,10 +12,10 @@ class UserInterface(ctk.CTk):
         self.mainMenu()
         # first menu: sr = SoundRandomiser
         self.sr = SoundRandomiserUI(self)
-        self.sr.pack(anchor="n", side=ctk.TOP)
+        self.sr.pack(anchor="n", side=ctk.TOP, pady=16, padx=16)
         # second menu: sl = SoundLooper
         self.sl = SoundLooperUI(self)
-        self.sl.pack(anchor="n", side=ctk.TOP)
+        self.sl.pack(anchor="n", side=ctk.TOP, pady=16, padx=16)
 
         # Set the window minimum size to the initial window size
         self.update()
@@ -35,7 +35,7 @@ class UserInterface(ctk.CTk):
     def statusMessage(self, msg, info=None):
         print(msg)
         if info:
-            print(info)
+            print(f"-> {info}")
         self.status.configure(text=msg)
         # TODO: make this function not resize the window if the text is too big..
         #       but also allow for resizing/scrolling to view long messages
@@ -56,6 +56,7 @@ class SoundRandomiserUI(ctk.CTkFrame):
         except SoundRandomiserError as e:
             self.srPlayer = None
             self.parent.statusMessage("Unable to create srPLayer", info=e)
+        self.srRootDir = ctk.StringVar(value=self.srPlayer.getRootDir())
         # interval = ms before function should be called again by tk's mainloop
         self.srInterval = 50
         # defines if the randomiser is running or not
@@ -77,6 +78,15 @@ class SoundRandomiserUI(ctk.CTkFrame):
             self.srRun = False
         else:
             self.parent.statusMessage("SoundRandomiser isn't running...")
+
+    def srLoadDir(self):
+        self.parent.statusMessage("Loading SoundRandomiser directory", info=self.srRootDir.get())
+        try:
+            self.srPlayer.sfxLoadDir(self.srRootDir.get(), init=False)
+            self.srDirSelector["dirBox"].configure(values=self.srPlayer.getSubDirListAll())
+            self.parent.statusMessage("SoundRandomiser directory loaded!")
+        except SoundRandomiserError as e:
+            self.parent.statusMessage("SoundRandomiser unable to load directory", info=e)
 
     # repeatedly rolls for a sfx chance given srRun is true
     def srPlay(self):
@@ -111,14 +121,42 @@ class SoundRandomiserUI(ctk.CTkFrame):
         self.srInterval = int(val)
         self.srUpdateProb()
 
+    def selectDirectory(self, dirStr):
+        if self.srPlayer.getSubDirStatus(dirStr):
+            self.srDirSelector["status"].set(1)
+        else:   
+            self.srDirSelector["status"].set(0)
+
+    def toggleDirectory(self):
+        try:
+            dirStr = self.srDirSelector["curDir"].get()
+            if self.srDirSelector["status"].get() == 1:
+                self.srPlayer.enableSubDir(dirStr)
+                self.parent.statusMessage(f"Enabled randomiser on: {dirStr.split(os.sep)[-1]}")
+            else:
+                self.srPlayer.disableSubDir(dirStr)
+                self.parent.statusMessage(f"Disabled randomiser on: {dirStr.split(os.sep)[-1]}")
+        except SoundRandomiserError as e:
+            self.parent.statusMessage("SoundRandomiser unable to toggle directory", info=e)
+
+    def soloDirectory(self):
+        try:
+            self.srPlayer.setSubDirList([self.srDirSelector["curDir"].get()])
+            self.srDirSelector["status"].set(1)
+        except SoundRandomiserError as e:
+            self.parent.statusMessage("SoundRandomiser unable to toggle directory", info=e)
+
     # 
     # SoundRandomiser menu setup function
     #   -- very simple
     #
     def srMenu(self):
-        ctk.CTkLabel(self, text="Sound Randomiser").grid(row=0, column=0, columnspan=2)
-        ctk.CTkButton(self, text="Start", width=96, command=lambda: self.srToggle(True)).grid(row=1, column=0, padx=8)
-        ctk.CTkButton(self, text="Stop" , width=96, command=lambda: self.srToggle(False)).grid(row=1, column=1, padx=8)
+        row = 0
+        ctk.CTkLabel(self, text="Sound Randomiser").grid(row=row, column=0, columnspan=3)
+        row += 1
+        ctk.CTkButton(self, text="Start", width=96, command=lambda: self.srToggle(True)).grid(row=row, column=0, padx=8)
+        ctk.CTkButton(self, text="Stop" , width=96, command=lambda: self.srToggle(False)).grid(row=row, column=1, padx=8)
+        ctk.CTkButton(self, text="Load" , width=96, command=self.srLoadDir).grid(row=row, column=2, padx=8)
 
         self.srProbability = {
             "sProb" : ctk.StringVar(),
@@ -129,14 +167,38 @@ class SoundRandomiserUI(ctk.CTkFrame):
         }
         self.srUpdateProb()
         
-        ctk.CTkLabel(self, text="probability: ").grid(row=2, column=0, sticky="e")
-        ctk.CTkLabel(self, text=  "frequency: ").grid(row=4, column=0, sticky="e")
-        ctk.CTkLabel(self, text= "throughput: ").grid(row=6, column=0, sticky="e")
-        ctk.CTkLabel(self, textvariable=self.srProbability["sProb"]).grid(row=2, column=1, sticky="w")
-        ctk.CTkLabel(self, textvariable=self.srProbability["sFreq"]).grid(row=4, column=1, sticky="w")
-        ctk.CTkLabel(self, textvariable=self.srProbability["sTrpt"]).grid(row=6, column=1, sticky="w")
-        self.srProbability["probSlider"].grid(row=3, column=0, columnspan=2)
-        self.srProbability["freqSlider"].grid(row=5, column=0, columnspan=2)
+        row += 1
+        ctk.CTkLabel(self, text="root directory: ").grid(row=row, column=0)
+        ctk.CTkEntry(self, textvariable=self.srRootDir).grid(row=row, column=1, columnspan=2, pady=8, sticky="ew")
+
+        row += 1
+        self.srDirSelector = {
+            "curDir" : ctk.StringVar(),
+            "status" : ctk.Variable(),
+            "dirBox" : ctk.CTkComboBox(self, justify="right", values=self.srPlayer.getSubDirListAll(), command=self.selectDirectory),
+        }
+        ctk.CTkLabel(self, text= "sub directory:").grid(row=row, column=0)
+        self.srDirSelector["dirBox"].configure(variable=self.srDirSelector["curDir"])
+        self.srDirSelector["dirBox"].grid(row=row, column=1, columnspan=2, pady=8, sticky="ew")
+        row += 1
+        ctk.CTkButton(self, text="Solo", width=96, command=self.soloDirectory).grid(row=row, column=2, padx=8)
+        ctk.CTkCheckBox(self, text="Enabled?", onvalue=1, offvalue=0, command=self.toggleDirectory, variable=self.srDirSelector["status"]).grid(row=row, column=1)
+
+        row += 1
+        ctk.CTkLabel(self, text=" ", height=0).grid(row=row, column=0)
+        row += 1
+        ctk.CTkLabel(self, text="probability: ", height=0).grid(row=row, column=0, sticky="s")
+        ctk.CTkLabel(self, textvariable=self.srProbability["sProb"], height=0).grid(row=row+1, column=0, sticky="ne", ipadx=8)
+        self.srProbability["probSlider"].grid(row=row, column=1, columnspan=2, rowspan=2)
+        row += 2
+
+        ctk.CTkLabel(self, text=  "frequency: ", height=0).grid(row=row, column=0, sticky="s")
+        ctk.CTkLabel(self, textvariable=self.srProbability["sFreq"], height=0).grid(row=row+1, column=0, sticky="ne", ipadx=8)
+        self.srProbability["freqSlider"].grid(row=row, column=1, columnspan=2, rowspan=2)
+        row += 2
+
+        ctk.CTkLabel(self, text= "throughput: ").grid(row=row, column=0)
+        ctk.CTkLabel(self, textvariable=self.srProbability["sTrpt"]).grid(row=row, column=1, columnspan=2, sticky="w", ipadx=8)
 
 #
 #   SoundLooper functions
