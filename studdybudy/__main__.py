@@ -141,8 +141,10 @@ class SoundRandomiserUI(ctk.CTkFrame):
 
     def soloDirectory(self):
         try:
-            self.srPlayer.setSubDirList([self.srDirSelector["curDir"].get()])
+            dirStr = self.srDirSelector["curDir"].get()
+            self.srPlayer.setSubDirList([dirStr])
             self.srDirSelector["status"].set(1)
+            self.parent.statusMessage(f"Randomiser solo on: {dirStr.split(os.sep)[-1]}")
         except SoundRandomiserError as e:
             self.parent.statusMessage("SoundRandomiser unable to toggle directory", info=e)
 
@@ -168,7 +170,7 @@ class SoundRandomiserUI(ctk.CTkFrame):
         self.srUpdateProb()
         
         row += 1
-        ctk.CTkLabel(self, text="root directory: ").grid(row=row, column=0)
+        ctk.CTkLabel(self, text="sfx directory: ").grid(row=row, column=0)
         ctk.CTkEntry(self, textvariable=self.srRootDir).grid(row=row, column=1, columnspan=2, pady=8, sticky="ew")
 
         row += 1
@@ -177,7 +179,7 @@ class SoundRandomiserUI(ctk.CTkFrame):
             "status" : ctk.Variable(),
             "dirBox" : ctk.CTkComboBox(self, justify="right", values=self.srPlayer.getSubDirListAll(), command=self.selectDirectory),
         }
-        ctk.CTkLabel(self, text= "sub directory:").grid(row=row, column=0)
+        ctk.CTkLabel(self, text= "sub-directory:").grid(row=row, column=0)
         self.srDirSelector["dirBox"].configure(variable=self.srDirSelector["curDir"])
         self.srDirSelector["dirBox"].grid(row=row, column=1, columnspan=2, pady=8, sticky="ew")
         row += 1

@@ -26,7 +26,8 @@ Run:
 randomly decides to play a random sound effect
 place sfx to loop over in the folder `./media/randomiser` (subdirectories are ok!)
 these must be formatted as ".wav"
-(sfx must be added to the folder before program launch)
+
+Pressing load will add all .wav files from the subfolders in the `sfx directory` to the current list of loaded sfx. Sfx are grouped via their sub-directory and can be enabled/disabled based on this separation by selecting it in the `sub-directory` drop down. If a subfolder has already been loaded, pressing load will reload that folders entry (sfx shouldn't just doubled up anymore).
 
 * probablity is the chance that a sound will be played, then it is an equal choice between all sfx loaded from the sfx dir
 * frequency is how much time will pass between each roll (just ignore that it actually describes the period)
@@ -44,13 +45,14 @@ format is not as strict here
 
 # To do:
 SR
-* allow reloading sfx dir with program open
-* implement a playback toggle of the loaded sub directories
+* make the directory boxes scroll to the right as this is the more informative part of the string...
 
 SL
 * browse/list files in the directory
+* find closest file matching filename
 * allow manual loop point selection
 * cache previous loop points for faster song loading
 
 idks
 * can I volume controls?? apparently not for sounddevice specifically, so you need to use volume mixer, but maybe I can at some point set the volume mixer from within python
+* memory of previous directories and filename restored when opening the program
